@@ -1,0 +1,93 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Operations dashboard";
+}
+
+<section class="hero-panel">
+    <div>
+        <p class="eyebrow">Live operations</p>
+        <h1>Incident command center</h1>
+        <p class="hero-copy">Track ownership, SLA exposure and recovery work from one operational view.</p>
+    </div>
+    @if (User.IsInRole("IncidentManager"))
+    {
+        <a class="btn btn-primary btn-lg" asp-page="/Incidents/Create">Create incident</a>
+    }
+</section>
+
+<section class="metric-grid" aria-label="Incident metrics">
+    <article class="metric-card metric-card--primary">
+        <span>Active</span>
+        <strong>@(Model.Dashboard.Open + Model.Dashboard.Acknowledged)</strong>
+        <small>@Model.Dashboard.Open open · @Model.Dashboard.Acknowledged acknowledged</small>
+    </article>
+    <article class="metric-card metric-card--danger">
+        <span>SLA breached</span>
+        <strong>@Model.Dashboard.Breached</strong>
+        <small>Requires immediate attention</small>
+    </article>
+    <article class="metric-card metric-card--warning">
+        <span>Due within 2h</span>
+        <strong>@Model.Dashboard.DueSoon</strong>
+        <small>Proactive intervention window</small>
+    </article>
+    <article class="metric-card">
+        <span>Resolved</span>
+        <strong>@Model.Dashboard.Resolved</strong>
+        <small>@Model.Dashboard.Total total incidents</small>
+    </article>
+</section>
+
+<section class="content-panel">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Incident queue</p>
+            <h2>Current workload</h2>
+        </div>
+        <span class="record-count">@Model.Dashboard.Incidents.Count records</span>
+    </div>
+
+    @if (Model.Dashboard.Incidents.Count == 0)
+    {
+        <div class="empty-state">
+            <h3>No incidents yet</h3>
+            <p>Create the first incident to begin tracking operational risk.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table incident-table align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Incident</th>
+                        <th scope="col">Severity</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Owner</th>
+                        <th scope="col">SLA deadline (UTC)</th>
+                        <th scope="col"><span class="visually-hidden">Open</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var incident in Model.Dashboard.Incidents)
+                    {
+                        var severityClass = $"severity-{incident.Severity.ToString().ToLowerInvariant()}";
+                        var statusClass = incident.IsSlaBreached ? "status-breached" : $"status-{incident.Status.ToString().ToLowerInvariant()}";
+                        <tr>
+                            <td>
+                                <a class="incident-title" asp-page="/Incidents/Details" asp-route-id="@incident.Id">@incident.Title</a>
+                                <span class="incident-id">@incident.Id.ToString()[..8]</span>
+                            </td>
+                            <td><span class="severity-pill @severityClass">@incident.Severity</span></td>
+                            <td><span class="status-pill @statusClass">@(incident.IsSlaBreached ? "SLA breached" : incident.Status)</span></td>
+                            <td>@(incident.AssignedEngineer ?? "Unassigned")</td>
+                            <td><time datetime="@incident.SlaDueAtUtc.ToString("O")">@incident.SlaDueAtUtc.ToString("dd MMM yyyy · HH:mm")</time></td>
+                            <td><a class="row-link" asp-page="/Incidents/Details" asp-route-id="@incident.Id" aria-label="Open @incident.Title">View →</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

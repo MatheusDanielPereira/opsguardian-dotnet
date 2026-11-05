@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Restore locked dependencies
+        run: dotnet restore OpsGuardian.slnx --locked-mode
+
+      - name: Verify formatting
+        run: dotnet format OpsGuardian.slnx --verify-no-changes --no-restore
+
+      - name: Build
+        run: dotnet build OpsGuardian.slnx --configuration Release --no-restore
+
+      - name: Test with coverage
+        run: dotnet test OpsGuardian.slnx --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory TestResults
+
+      - name: Audit dependencies
+        run: dotnet list OpsGuardian.slnx package --vulnerable --include-transitive
+
+      - name: Publish application
+        run: dotnet publish src/OpsGuardian.Web/OpsGuardian.Web.csproj --configuration Release --no-build --output artifacts/publish
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: warn
+          retention-days: 7

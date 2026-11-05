@@ -1,0 +1,82 @@
+@page "{id:guid}"
+@model OpsGuardian.Web.Pages.Incidents.DetailsModel
+@{
+    ViewData["Title"] = Model.Incident.Title;
+    var severityClass = $"severity-{Model.Incident.Severity.ToString().ToLowerInvariant()}";
+    var statusClass = Model.Incident.IsSlaBreached ? "status-breached" : $"status-{Model.Incident.Status.ToString().ToLowerInvariant()}";
+}
+
+<div class="page-heading details-heading">
+    <div>
+        <a class="back-link" asp-page="/Index">← Back to dashboard</a>
+        <div class="pill-row">
+            <span class="severity-pill @severityClass">@Model.Incident.Severity</span>
+            <span class="status-pill @statusClass">@(Model.Incident.IsSlaBreached ? "SLA breached" : Model.Incident.Status)</span>
+        </div>
+        <h1>@Model.Incident.Title</h1>
+        <p class="incident-reference">Incident @Model.Incident.Id</p>
+    </div>
+</div>
+
+<div class="details-grid">
+    <section class="content-panel details-main">
+        <div class="section-heading"><h2>Incident context</h2></div>
+        <p class="description-copy">@Model.Incident.Description</p>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Incident.ResolutionSummary))
+        {
+            <div class="resolution-box">
+                <span>Resolution</span>
+                <p>@Model.Incident.ResolutionSummary</p>
+            </div>
+        }
+
+        <dl class="detail-list">
+            <div><dt>Created (UTC)</dt><dd>@Model.Incident.CreatedAtUtc.ToString("dd MMM yyyy · HH:mm")</dd></div>
+            <div><dt>Last update (UTC)</dt><dd>@Model.Incident.UpdatedAtUtc.ToString("dd MMM yyyy · HH:mm")</dd></div>
+            <div><dt>SLA deadline (UTC)</dt><dd>@Model.Incident.SlaDueAtUtc.ToString("dd MMM yyyy · HH:mm")</dd></div>
+            <div><dt>Assigned engineer</dt><dd>@(Model.Incident.AssignedEngineer ?? "Unassigned")</dd></div>
+        </dl>
+    </section>
+
+    @if (Model.CanManage)
+    {
+        <aside class="action-panel">
+            <p class="eyebrow">Response actions</p>
+            <h2>Manage incident</h2>
+
+            @if (Model.Incident.Status != IncidentStatus.Resolved)
+            {
+                <form method="post" asp-page-handler="Assign" asp-route-id="@Model.Incident.Id" class="action-form">
+                    <label asp-for="Engineer" class="form-label">Owner</label>
+                    <div class="input-group">
+                        <input asp-for="Engineer" class="form-control" autocomplete="off" />
+                        <button class="btn btn-outline-secondary" type="submit">Assign</button>
+                    </div>
+                    <span asp-validation-for="Engineer" class="text-danger"></span>
+                </form>
+
+                @if (Model.Incident.Status == IncidentStatus.Open)
+                {
+                    <form method="post" asp-page-handler="Acknowledge" asp-route-id="@Model.Incident.Id" class="action-form">
+                        <button class="btn btn-outline-primary w-100" type="submit">Acknowledge incident</button>
+                    </form>
+                }
+
+                <form method="post" asp-page-handler="Resolve" asp-route-id="@Model.Incident.Id" class="action-form">
+                    <label asp-for="ResolutionSummary" class="form-label">Resolution summary</label>
+                    <textarea asp-for="ResolutionSummary" class="form-control" rows="4"></textarea>
+                    <span asp-validation-for="ResolutionSummary" class="text-danger"></span>
+                    <button class="btn btn-primary w-100 mt-2" type="submit">Resolve incident</button>
+                </form>
+            }
+            else
+            {
+                <form method="post" asp-page-handler="Reopen" asp-route-id="@Model.Incident.Id" class="action-form">
+                    <p class="action-help">Reopening creates a new SLA window based on the current severity.</p>
+                    <button class="btn btn-outline-primary w-100" type="submit">Reopen incident</button>
+                </form>
+            }
+        </aside>
+    }
+</div>

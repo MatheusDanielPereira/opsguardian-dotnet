@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/OpsGuardian.Application/OpsGuardian.Application.csproj" />
+    <Project Path="src/OpsGuardian.Domain/OpsGuardian.Domain.csproj" />
+    <Project Path="src/OpsGuardian.Infrastructure/OpsGuardian.Infrastructure.csproj" />
+    <Project Path="src/OpsGuardian.Web/OpsGuardian.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OpsGuardian.Domain.Tests/OpsGuardian.Domain.Tests.csproj" />
+    <Project Path="tests/OpsGuardian.Web.Tests/OpsGuardian.Web.Tests.csproj" />
+  </Folder>
+</Solution>
